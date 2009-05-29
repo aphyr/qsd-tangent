@@ -41,7 +41,7 @@
 class IntegrationStep
 {
 public:
-  virtual void operator()(State& psi, double t, double dt,
+  virtual void operator()(State& psi, State& eta double t, double dt,
       double& dtlast, ComplexRandom* rndm) = 0;	// perform one step
   virtual ~IntegrationStep();			// destructor
   inline int nLindblads() { return nL; }	// return # of Lindblad Ops
@@ -91,10 +91,10 @@ private:
 class AdaptiveStep: public IntegrationStep
 {
 public:
-  AdaptiveStep( const State& psi, const Operator& theH, int theNL,
-      const Operator* theL, double theEpsilon = 0.000001);
+  AdaptiveStep( const State& psi, const State& eta, const Operator& theH, 
+      int theNL, const Operator* theL, double theEpsilon = 0.000001);
   ~AdaptiveStep();
-  virtual void operator()(State& psi, double t, double dt,
+  virtual void operator()(State& psi, State&eta, double t, double dt,
       double& dtlast, ComplexRandom* rndm);
   void dtListSet( int theDim );
   void dtListRead();
@@ -192,8 +192,8 @@ public:
 
   Trajectory();
 
-  Trajectory(const State& thePsiIni, double thedt, IntegrationStep& theStepper, 
-      ComplexRandom* theRand = 0, double theT0=0.0);
+  Trajectory(const State& thePsiIni, const State& theEtaIni, double thedt, 
+     IntegrationStep& theStepper, ComplexRandom* theRand = 0, double theT0=0.0);
   // Define a trajectory without computing it.
   // thedt specifies the integration stepsize
   // theRand is a ComplexRandom process; it can be of any of several types.
@@ -242,9 +242,13 @@ public:
   State getState();
   // returns the stored value of psi
 
+  State getTangentState();
+  // returns the stored value of eta
+
 private:
 
   State psi;               // Initial state.
+  State eta;               // Tangent state.
   double dt;               // Basic integration stepsize = step/dtsPerStep.
   ComplexRandom* rndm;     // Pointer to random number generator.
   double t0;               // Initial time.
