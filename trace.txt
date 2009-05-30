@@ -1,0 +1,5 @@
+Execution path:
+
+duffing.cc creates a
+
+Traject.cc
