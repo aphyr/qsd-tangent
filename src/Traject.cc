@@ -58,16 +58,14 @@ Trajectory::Trajectory()	// Constructor
   error("A trajectory must be constructed with initial data!");
 }
 
-AdaptiveStep::AdaptiveStep(const State& psi, const Operator& theH, int theNL,
-	const Operator* theL, double theEpsilon)
+AdaptiveStep::AdaptiveStep(const State& psi, const State& eta, const Operator& theH, int theNL,	const Operator* theL, double theEpsilon)
 //
-// Constructor for AdaptiveStep; this contains all the information needed
-// to integrate the QSD equation for a single adaptive timestep.  The
-// Hamiltonian and Lindblad operators are stored as private data; the
-// State psi is used to initialize the temporary States used in the
-// Runge-Kutta integration; nL is the number of Lindblad operators, and
-// is also stored as private data; and the integration is performed up to
-// an accuracy epsilon.
+// Constructor for AdaptiveStep; this contains all the information needed to
+// integrate the QSD equation for a single adaptive timestep.  The Hamiltonian
+// and Lindblad operators are stored as private data; the State psi is used to
+// initialize the temporary States used in the Runge-Kutta integration; as is
+// eta, nL is the number of Lindblad operators, and is also stored as private
+// data; and the integration is performed up to an accuracy epsilon.
 //
 {
   H = theH;				// store private data
@@ -88,8 +86,11 @@ AdaptiveStep::AdaptiveStep(const State& psi, const Operator& theH, int theNL,
   listPtr = 0;
 
   ak2 = ak3 = ak4 = ak5 = psi;		// initialize temporaries
+  ak2t = ak3t = ak4t = ak5t = eta;		// initialize temporaries
   ytemp = yerr = y = yout = dydt = psi;
+  ytempt = yerrt = yt = youtt = dydtt = eta;
   temp1 = newsum = psi;
+  temp1t = newsumt = psit;
 }
 
 AdaptiveStep::~AdaptiveStep()	// AdaptiveStep destructor
@@ -124,8 +125,7 @@ AdaptiveOrthoJump::~AdaptiveOrthoJump()     // AdaptiveOrthoJump destructor
   if( outFile != 0 ) fclose(outFile);
 }
 
-Trajectory::Trajectory(const State& thePsiIni, double thedt,
-  IntegrationStep& theStepper, ComplexRandom* theRand, double theT0)
+Trajectory::Trajectory(const State& thePsiIni, const State& theEtaIni double thedt, IntegrationStep& theStepper, ComplexRandom* theRand, double theT0)
 //
 // Constructor for trajectory class.  This stores all the
 // information needed to calculate a QSD trajectory.  The initial state,
@@ -137,6 +137,7 @@ Trajectory::Trajectory(const State& thePsiIni, double thedt,
 //
 {
   psi = thePsiIni;
+  eta = theEtaIni;
   dt = thedt;
   rndm = theRand;
   t0 = theT0;
@@ -156,7 +157,7 @@ IntegrationStep::~IntegrationStep()	// destructor
 #endif // ---- NON GNU CODE ----
 }
 
-void AdaptiveStep::operator()(State& psi, double t, double dt,
+void AdaptiveStep::operator()(State& psi, State& eta, double t, double dt,
 	double& dtlast, ComplexRandom* rndm)
 //
 // This member function calculates a single QSD integration step.  It
@@ -178,8 +179,11 @@ void AdaptiveStep::operator()(State& psi, double t, double dt,
       dxi[i] = sqrtdt*(*rndm)();		// ...independent noise
     }
   }
+  // QUESTION: what's up with this repeat assignment?
   newsum = psi;					// initialize temp
+  newsumt = eta;
   newsum = 0;
+  newsumt = 0;
   odeint(psi,t,t+dt,epsilon,dtlast,0.0,nok,nbad,dxi);
 	// generate deterministic evolution (and also stochastic term)
   psi += newsum;				// add stochastic term
@@ -247,6 +251,12 @@ State Trajectory::getState()
 // Returns the value of psi stored in the trajectory.
 {
   return psi;
+}
+
+State Trajectory::getTangentState()
+// Returns the value of eta stored in the trajectory.
+{
+  return eta;
 }
 
 void Trajectory::plotExp_obsolete( int nX, const Operator* X, FILE** fp, int* pipe,
@@ -367,7 +377,10 @@ void Trajectory::plotExp( int nX, const Operator* X, char** fname, int* pipe,
           << endl;
   }
 
+
+  //TODO: replace this with deta output
   State psi1 = psi;			// temporary state
+  State eta1 = eta;
 
   for( int i=0; i<nX; i++ ) {		// compute expectation values for
     psi1 = psi;				// output...
@@ -388,15 +401,18 @@ void Trajectory::plotExp( int nX, const Operator* X, char** fname, int* pipe,
     printf("%lG %lG %lG %lG %lG %d %d\n",
       t,xpipe[0],xpipe[1],xpipe[2],xpipe[3],psi.size(),(*stepper).getNumdts());
 
+  // Run stepper
   for (int n=1; n<=nOfSteps; n++) {
     for (int n1=0; n1<dtsPerStep; n1++) {
-      (*stepper)(psi,t,dt,dtlast,rndm);
+      (*stepper)(psi,eta,t,dt,dtlast,rndm);
       t += dt;
       for(int k=0; k<move; k++) {		// use moving basis & cutoff
+        // TODO: how will eta be affected by the change in basis?
         psi.adjustCutoff(k,delta,width);
         psi.recenter(k,moveEps);
       }
     }
+    //TODO: replace this with deta output
     for( int i=0; i<nX; i++ ) {		// compute expectation values for
       psi1 = psi;			// output...
       psi1 *= X[i];
@@ -1188,7 +1204,7 @@ void AdaptiveStep::dtListReset()
   listPtr = 0;
 }
 
-void IntegrationStep::derivs(double t, State& psi, State& dpsi)
+void IntegrationStep::derivs(double t, State& psi, State& dpsi, State& eta, State& deta)
 //
 // Computes the change of the state psi in a timestep dt due to the
 // deterministic part of the QSD equation.

@@ -1,5 +1,11 @@
 Execution path:
 
-duffing.cc creates a
+duffing.cc creates
+  AdaptiveStep
+  Trajectory
 
-Traject.cc
+Then calls
+  Trajectory.plotExp()
+    AdaptiveStep()
+      
+  

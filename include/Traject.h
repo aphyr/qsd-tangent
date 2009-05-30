@@ -41,7 +41,7 @@
 class IntegrationStep
 {
 public:
-  virtual void operator()(State& psi, State& eta double t, double dt,
+  virtual void operator()(State& psi, State& eta, double t, double dt,
       double& dtlast, ComplexRandom* rndm) = 0;	// perform one step
   virtual ~IntegrationStep();			// destructor
   inline int nLindblads() { return nL; }	// return # of Lindblad Ops
@@ -56,10 +56,13 @@ protected:
   int numdtsUsed;	// # of deterministic dts used
   
   State temp0;		// Temporary states
+  State temp0t;		// Temporary states
   State temp1;
+  State temp1t;
   State newsum;
+  State newsumt;
 
-  virtual void derivs(double, State&, State&);
+  virtual void derivs(double, State&, State&, State&, State&);
   void error(char* message);
 };
 
@@ -117,6 +120,16 @@ protected:
   State yout;
   State yerr;
   State y;
+
+  State dydtt;		// Temporary states for eta
+  State ak2t;
+  State ak3t;
+  State ak4t;
+  State ak5t;
+  State ytempt;
+  State youtt;
+  State yerrt;
+  State yt;
 
   void rkck(double t, double h);
   void rkqs(double& t, double htry, double eps,
