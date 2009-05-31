@@ -134,7 +134,7 @@ protected:
   void rkck(double t, double h);
   void rkqs(double& t, double htry, double eps,
 	double& hdid, double& hnext);
-  virtual void odeint(State& ystart, double t1, double t2, double eps,
+  virtual void odeint(State& ystart, State& ystartt, double t1, double t2, double eps,
 	double& h1, double hmin, int& nok, int& nbad, Complex* dxi);
 };
 

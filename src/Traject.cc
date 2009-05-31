@@ -184,10 +184,11 @@ void AdaptiveStep::operator()(State& psi, State& eta, double t, double dt,
   newsumt = eta;
   newsum = 0;
   newsumt = 0;
-  odeint(psi,t,t+dt,epsilon,dtlast,0.0,nok,nbad,dxi);
+  odeint(psi,eta,t,t+dt,epsilon,dtlast,0.0,nok,nbad,dxi);
 	// generate deterministic evolution (and also stochastic term)
   psi += newsum;				// add stochastic term
-  psi.normalize();
+  eta += newsumt;
+  psi.normalize(i);     // QUESTION: why i?
 }
 
 void AdaptiveStochStep::operator()(State& psi, double t, double dt,
@@ -880,7 +881,7 @@ void AdaptiveStep::rkqs(double& t, double htry, double eps,
 }
 
 
-void AdaptiveStep::odeint(State& ystart, double t1, double t2, double eps, double& h1,
+void AdaptiveStep::odeint(State& ystart, State& ystartt, double t1, double t2, double eps, double& h1,
 	double hmin, int& nok, int& nbad, Complex* dxi)
 //
 // Runge-Kutta driver with adaptive stepsize control  Integrate starting values

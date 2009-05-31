@@ -1,11 +1,11 @@
 Execution path:
 
 duffing.cc creates
-  AdaptiveStep
-  Trajectory
+  AdaptiveStep 
+  Trajectory 
 
 Then calls
-  Trajectory.plotExp()
-    AdaptiveStep()
-      
-  
+  Trajectory.plotExp() DONE
+    AdaptiveStep() DONE
+      AdaptiveStep.odeint()
+        AdaptiveStep.rkqs()
